@@ -1,0 +1,12 @@
+# Compilación
+.pio/
+target/
+*.bin
+*.exe
+
+# Python
+__pycache__/
+
+# Editores
+.vscode/
+.idea/

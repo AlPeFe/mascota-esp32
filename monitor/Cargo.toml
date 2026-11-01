@@ -1,0 +1,24 @@
+[package]
+name = "mascota-monitor"
+version = "2.1.0"
+edition = "2021"
+description = "Envia los recursos del PC a la mascota ESP32 por USB, desde la bandeja del sistema"
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[dependencies]
+auto-launch = "0.6.0"
+chrono = { version = "0.4.45", default-features = false, features = ["clock"] }
+nvml-wrapper = "0.13.0"
+serialport = "4.10.1"
+sysinfo = "0.40.1"
+tao = "0.37.2"
+tray-icon = "0.26.1"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.59", features = ["Win32_System_SystemInformation", "Win32_UI_Input_KeyboardAndMouse"] }
