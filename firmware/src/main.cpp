@@ -28,6 +28,8 @@ static SPIClass touchSpi(VSPI);
 static XPT2046_Touchscreen touch(TOUCH_CS, TOUCH_IRQ);
 
 static const int BL_CHANNEL = 0;
+// Reposo del panel: mismos códigos en ILI9341 y ST7789
+static const uint8_t PANEL_SLEEP_IN = 0x10, PANEL_SLEEP_OUT = 0x11;
 
 static Pet* pet = nullptr;
 static Screen* screens[PAGE_COUNT];
@@ -36,6 +38,7 @@ static bool dirty = true;
 static uint32_t lastFrame = 0, lastUpdate = 0, lastTouchMs = 0;
 static int lastTapX = -1, lastTapY = -1;
 static uint8_t rotation = 0;
+static bool screenOff = false;
 
 // --- Funciones para las pantallas (app.h) ---
 
@@ -79,14 +82,43 @@ void appApplyDisplay() {
 
 // --- Brillo: baja solo cuando no hay PC y nadie toca la pantalla ---
 
+static int backlightLevel = -1;
+
 static void updateBacklight() {
-  static int current = -1;
   uint32_t now = millis();
   bool idle = now - stats.lastMs > DIM_AFTER_MS && now - lastTouchMs > 15000;
   int target = idle ? max(10, settings.brightness / 5) : settings.brightness;
-  if (target != current) {
+  if (target != backlightLevel) {
     ledcWrite(BL_CHANNEL, target);
-    current = target;
+    backlightLevel = target;
+  }
+}
+
+// --- Apagar la pantalla cuando no hay nadie ---
+
+// Tiempo desde la última actividad conocida: un toque en la pantalla o el
+// teclado y el ratón del PC. Si dejan de llegar datos (el PC duerme o se ha
+// apagado), sigue contando desde lo último que se supo.
+static uint32_t inactiveMs(uint32_t now) {
+  uint32_t sincePc;
+  if (!stats.valid) sincePc = now;
+  else if (stats.idle >= 0) sincePc = stats.idle * 1000UL + (now - stats.lastMs);
+  else sincePc = statsConnected() ? 0 : now - stats.lastMs;  // sin ese dato (Linux), basta con que haya PC
+  return min(sincePc, now - lastTouchMs);
+}
+
+static void updateScreenPower() {
+  const bool off = inactiveMs(millis()) >= SCREEN_OFF_MS;
+  if (off == screenOff) return;
+  screenOff = off;
+  if (off) {
+    ledcWrite(BL_CHANNEL, 0);
+    tft.writecommand(PANEL_SLEEP_IN);
+  } else {
+    tft.writecommand(PANEL_SLEEP_OUT);
+    delay(120);  // lo que pide el panel para despertar
+    dirty = true;
+    backlightLevel = -1;  // lo vuelve a encender updateBacklight, ya con la imagen dibujada
   }
 }
 
@@ -131,6 +163,7 @@ static void handleTap(int x, int y) {
 // Distingue toque y deslizamiento al levantar el dedo.
 static void handleTouch() {
   static bool down = false;
+  static bool wakeTouch = false;  // el toque que despierta la pantalla no pulsa nada
   static int x0, y0, x1, y1;
   static uint32_t lastSeen;
 
@@ -139,6 +172,7 @@ static void handleTouch() {
   if (readTouch(x, y)) {
     if (!down) {
       down = true;
+      wakeTouch = screenOff;
       x0 = x;
       y0 = y;
     }
@@ -150,6 +184,7 @@ static void handleTouch() {
   if (!down || now - lastSeen < 80) return;  // pequeño margen contra rebotes
 
   down = false;
+  if (wakeTouch) return;
   int dx = x1 - x0, dy = y1 - y0;
   if (abs(dx) > 70 && abs(dx) > 2 * abs(dy)) {
     goPage(page + (dx < 0 ? 1 : -1));
@@ -197,9 +232,9 @@ static void handleCommand(const char* cmd) {
   if (strcmp(cmd, "!shot") == 0) {
     sendScreenshot();
   } else if (strcmp(cmd, "!info") == 0) {
-    Serial.printf("INFO w=%d h=%d rot=%d page=%d stripH=%d renderMs=%u heap=%u maxBlock=%u tap=%d,%d dataAgeMs=%u cpu=%.1f ram=%.1f gpu=%s idle=%d\n",
+    Serial.printf("INFO w=%d h=%d rot=%d page=%d stripH=%d renderMs=%u heap=%u maxBlock=%u tap=%d,%d dataAgeMs=%u cpu=%.1f ram=%.1f gpu=%s idle=%d screenOff=%d backlight=%u\n",
                   SCREEN_W, SCREEN_H, rotation, page, stripH, renderMs, ESP.getFreeHeap(),
-                  ESP.getMaxAllocHeap(), lastTapX, lastTapY, millis() - stats.lastMs, stats.cpu, stats.ram, stats.gpuName, stats.idle);
+                  ESP.getMaxAllocHeap(), lastTapX, lastTapY, millis() - stats.lastMs, stats.cpu, stats.ram, stats.gpuName, stats.idle, screenOff, ledcRead(BL_CHANNEL));
   } else if (sscanf(cmd, "!page %d", &a) == 1) {
     goPage(a);
   } else if (sscanf(cmd, "!tap %d %d", &a, &b) == 2) {
@@ -282,6 +317,12 @@ void setup() {
 void loop() {
   if (statsPoll() && page != 0) dirty = true;
   handleTouch();
+  updateScreenPower();
+  if (screenOff) {
+    delay(20);  // sin animar ni dibujar; solo atento al PC y al táctil
+    lastUpdate = millis();
+    return;
+  }
 
   uint32_t now = millis();
   float dt = min((now - lastUpdate) / 1000.0f, 0.1f);
@@ -290,11 +331,11 @@ void loop() {
   PetInput in = {statsConnected(), stats.cpuSmooth, stats.gpu, stats.idle};
   pet->update(in, dt);
   screens[page]->update(dt);
-  updateBacklight();
 
   if (dirty || now - lastFrame >= screens[page]->frameMs()) {
     render();
     lastFrame = now;
     dirty = false;
   }
+  updateBacklight();
 }

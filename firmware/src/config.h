@@ -1,7 +1,7 @@
 #pragma once
 #include <Arduino.h>
 
-#define FIRMWARE_VERSION "2.1"
+#define FIRMWARE_VERSION "2.2"
 
 // --- Táctil XPT2046 (va en su propio bus SPI) ---
 #define TOUCH_CS 33
@@ -43,6 +43,7 @@ extern Layout layout;
 #define SERIAL_BAUD 115200
 #define DATA_TIMEOUT_MS 5000      // sin datos durante este tiempo = desconectado
 #define DIM_AFTER_MS 60000        // sin datos durante este tiempo = bajar brillo
+#define SCREEN_OFF_MS (5 * 60000UL)  // sin ninguna actividad durante este tiempo = apagar la pantalla
 #define HISTORY_LEN 60            // muestras guardadas para las gráficas
 
 #ifndef DEFAULT_INVERT

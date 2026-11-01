@@ -28,6 +28,7 @@ It lives on a 2.8" ESP32 touchscreen connected over USB and shows you how your P
 - 📊 **Resource monitor.** Per-core CPU, RAM, GPU, VRAM, temperature, disk and network, in a clean console style.
 - 👆 **Touch.** Pet it and hearts appear. Swipe to change screens.
 - 🔄 **Portrait or landscape.** Pick one in Settings and the interface rearranges itself.
+- 🌙 **Switches off when you're away.** After 5 minutes without activity, or if the PC goes to sleep, the screen turns off. It comes back when you use the PC or touch it.
 - 🪶 **Lightweight tray monitor.** A single Rust executable you can switch off in two clicks.
 
 ## Moods
@@ -40,7 +41,7 @@ It lives on a 2.8" ESP32 touchscreen connected over USB and shows you how your P
   </tr>
   <tr>
     <td align="center"><img src="docs/rest.png" width="200" alt="Resting"><br><b>Resting</b><br><sub>45 s without input</sub></td>
-    <td align="center"><img src="docs/sleep.png" width="200" alt="Sleeping"><br><b>Sleeping</b><br><sub>10 min without input, or no connection</sub></td>
+    <td align="center"><img src="docs/sleep.png" width="200" alt="Sleeping"><br><b>Sleeping</b><br><sub>3 min without input, or no connection</sub></td>
     <td align="center"><img src="docs/pet.png" width="200" alt="Happy, with hearts"><br><b>Cuddles</b><br><sub>When you touch it</sub></td>
   </tr>
 </table>
@@ -157,7 +158,7 @@ cargo build --release
 <details>
 <summary><b>Linux (experimental)</b></summary>
 
-The code is prepared for Linux, but **it hasn't been compiled or tested there yet**. Help is welcome. There's no activity data there either: the pet works when the PC goes above 20% usage.
+The code is prepared for Linux, but **it hasn't been compiled or tested there yet**. Help is welcome. There's no activity data there either: the pet works when the PC goes above 20% usage, and the screen only turns off if data stops arriving from the PC.
 
 On Debian or Ubuntu it needs these libraries:
 
@@ -186,6 +187,8 @@ static const Critter::Species CAT = {
 ```
 
 **Other shapes.** Add parts in `buildBody()` or `buildDesk()` in [`critter.cpp`](firmware/src/pets/critter.cpp), or create another class that inherits from `Pet`.
+
+**Screen off.** Change the delay with `SCREEN_OFF_MS` in [`config.h`](firmware/src/config.h).
 
 **Touch calibration.** If touches don't line up with your finger, adjust `TOUCH_X_MIN/MAX` and `TOUCH_Y_MIN/MAX` in [`config.h`](firmware/src/config.h).
 

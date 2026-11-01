@@ -22,7 +22,7 @@ const PetInfo PETS[] = {
 const int PET_COUNT = sizeof(PETS) / sizeof(PETS[0]);
 
 static const int WORKING_IDLE_S = 45;    // segundos sin actividad para dejar de teclear
-static const int SLEEP_IDLE_S = 10 * 60;  // segundos sin actividad para dormirse
+static const int SLEEP_IDLE_S = 3 * 60;  // segundos sin actividad para dormirse
 
 Mood moodFrom(const PetInput& in) {
   if (!in.connected) return Mood::Sleeping;

@@ -26,6 +26,7 @@ Vive en una pantalla táctil ESP32 de 2,8" conectada por USB y te enseña de un 
 - 📊 **Monitor de recursos.** CPU por núcleos, RAM, GPU, VRAM, temperatura, disco y red, en un estilo limpio de consola.
 - 👆 **Táctil.** Acaríciala y saldrán corazones. Desliza el dedo para cambiar de pantalla.
 - 🔄 **Vertical u horizontal.** Se elige en Ajustes y la interfaz se reorganiza sola.
+- 🌙 **Se apaga cuando no estás.** Tras 5 minutos sin actividad, o si el PC se duerme, apaga la pantalla. Vuelve al usar el PC o al tocarla.
 - 🪶 **Monitor ligero en la bandeja.** Un solo ejecutable de Rust que puedes apagar con dos clics.
 
 ## Humores
@@ -38,7 +39,7 @@ Vive en una pantalla táctil ESP32 de 2,8" conectada por USB y te enseña de un 
   </tr>
   <tr>
     <td align="center"><img src="docs/rest.png" width="200" alt="Descansando"><br><b>Descansando</b><br><sub>45 s sin tocar nada</sub></td>
-    <td align="center"><img src="docs/sleep.png" width="200" alt="Durmiendo"><br><b>Durmiendo</b><br><sub>10 min sin tocar nada o sin conexión</sub></td>
+    <td align="center"><img src="docs/sleep.png" width="200" alt="Durmiendo"><br><b>Durmiendo</b><br><sub>3 min sin tocar nada o sin conexión</sub></td>
     <td align="center"><img src="docs/pet.png" width="200" alt="Contento, con corazones"><br><b>Mimos</b><br><sub>Cuando la tocas</sub></td>
   </tr>
 </table>
@@ -155,7 +156,7 @@ cargo build --release
 <details>
 <summary><b>Linux (experimental)</b></summary>
 
-El código está preparado para Linux, pero **aún no se ha compilado ni probado allí**. Toda ayuda es bienvenida. Allí tampoco hay dato de actividad: la mascota trabaja cuando el PC supera el 20 % de uso.
+El código está preparado para Linux, pero **aún no se ha compilado ni probado allí**. Toda ayuda es bienvenida. Allí tampoco hay dato de actividad: la mascota trabaja cuando el PC supera el 20 % de uso, y la pantalla solo se apaga si dejan de llegar datos del PC.
 
 En Debian o Ubuntu necesita estas librerías:
 
@@ -184,6 +185,8 @@ static const Critter::Species CAT = {
 ```
 
 **Otras formas.** Añade piezas en `buildBody()` o `buildDesk()` de [`critter.cpp`](firmware/src/pets/critter.cpp), o crea otra clase que herede de `Pet`.
+
+**Apagado de pantalla.** Cambia el tiempo con `SCREEN_OFF_MS` en [`config.h`](firmware/src/config.h).
 
 **Calibrar el táctil.** Si el toque no coincide con el dedo, ajusta `TOUCH_X_MIN/MAX` y `TOUCH_Y_MIN/MAX` en [`config.h`](firmware/src/config.h).
 
