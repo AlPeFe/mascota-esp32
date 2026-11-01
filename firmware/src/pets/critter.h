@@ -40,7 +40,7 @@ class Critter : public Pet {
 
   // Piezas del modelo
   int body_, head_, armL_, armR_, shinL_, shinR_, tail_;
-  int deskMug_, handMug_;
+  int deskMug_, handMug_, cigarette_;
   int keyFlash_[FLASH_COUNT];
   int eyesOpen_, eyesBlink_, eyesClosed_, eyesHappy_, eyesFocus_, eyesStress_;
   int mouthSmall_, mouthOpen_, mouthRound_, mouthFlat_, mouthWavy_;
@@ -59,8 +59,11 @@ class Critter : public Pet {
   float pauseTimer_ = 0, nextPause_ = 4;  // se para a pensar de vez en cuando
   float flashTimer_ = 0;
 
-  // Café
-  float sipTimer_ = 0, nextSip_ = 3;
+  // Descansos: café y cigarro, por turnos
+  float sipTimer_ = 0, smokeTimer_ = 0, nextBreak_ = 3;
+  bool nextIsSmoke_ = false;
+  bool dragging_ = false, exhaling_ = false;  // calada y soltar el humo
+  float tipSmokeTimer_ = 0, exhaleTimer_ = 0;
 
   float heat_ = 0;
 

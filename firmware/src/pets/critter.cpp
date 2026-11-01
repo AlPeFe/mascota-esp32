@@ -13,6 +13,7 @@ enum Color : uint8_t {
   C_FUR, C_INNER, C_SHIRT, C_STRIPE, C_SHORTS, C_SHOE,
   C_INK, C_WHITE, C_BLUSH, C_MOUTH, C_NOSE,
   C_DESK, C_DESK_LEG, C_CHAIR, C_KEYBOARD, C_KEY, C_CRT, C_CRT_DARK, C_MUG, C_FLASH,
+  C_CIGARETTE, C_FILTER, C_EMBER, C_ASHTRAY,
 };
 
 // La cámara mira un poco desde arriba, para que se vea la mesa y el teclado
@@ -36,6 +37,11 @@ const int KEY_ROWS = 3, KEY_COLS = 9;
 const float REST_ARM_X = -1.47f, REST_ARM_Z = 0.15f;
 
 const float GRAVITY = 700;
+
+// Descanso para fumar: dos tandas de calada, soltar el humo y esperar
+const float SMOKE_BREAK = 9, SMOKE_CYCLE = 4.5f;
+const float DRAG_END = 1.3f, EXHALE_END = 2.5f;
+const Vec3 CIGARETTE_TIP = {-17, 0, 0};
 
 float rnd(float a, float b) { return a + (b - a) * (esp_random() / 4294967295.0f); }
 
@@ -110,6 +116,10 @@ Critter::Critter(const Species& species) : species_(species) {
   model_.setColor(C_CRT_DARK, 196, 190, 172);
   model_.setColor(C_MUG, 235, 90, 90);
   model_.setColor(C_FLASH, 0, 170, 150);
+  model_.setColor(C_CIGARETTE, 245, 245, 245);
+  model_.setColor(C_FILTER, 225, 160, 90);
+  model_.setColor(C_EMBER, 255, 90, 20);
+  model_.setColor(C_ASHTRAY, 130, 136, 150);
 
   // La cámara es la pieza raíz: al girarla se ve todo un poco desde arriba
   int camera = model_.addPart(-1, 0, CAMERA_PIVOT_Y, 0);
@@ -161,6 +171,11 @@ void Critter::buildDesk(int parent) {
   // Taza
   deskMug_ = model_.addPart(parent, 72, DESK_Y + 14, 28, 18);
   addMug(model_, deskMug_);
+
+  // Cenicero
+  int ashtray = model_.addPart(parent, 80, DESK_Y + 3, 52, 18);
+  const Ring ash[] = {{0, 8, 7, C_ASHTRAY}, {-3, 7, 6, C_ASHTRAY}};
+  model_.lathe(ashtray, ash, 2, 6);
 }
 
 void Critter::buildBody(int parent) {
@@ -208,6 +223,12 @@ void Critter::buildBody(int parent) {
   handMug_ = model_.addPart(armR_, 0, -34, 8, 66);
   model_.part(handMug_).rx = 2.35f;
   addMug(model_, handMug_);
+
+  // Cigarro en la otra mano: solo se ve mientras fuma
+  cigarette_ = model_.addPart(armL_, 0, -36, 6, 70);
+  model_.box(cigarette_, -2, 3, -1.3f, 1.3f, -1.3f, 1.3f, C_FILTER);
+  model_.box(cigarette_, -14, -2, -1.3f, 1.3f, -1.3f, 1.3f, C_CIGARETTE);
+  model_.box(cigarette_, -17, -14, -1.3f, 1.3f, -1.3f, 1.3f, C_EMBER);
 
   // Cabeza octogonal, con el pivote en el cuello
   head_ = model_.addPart(body_, 0, NECK_Y, 0, 22);
@@ -321,7 +342,10 @@ void Critter::showFace() {
       case Mood::Sleeping: eyes = Eyes::Closed; mouth = Mouth::Round; break;
       case Mood::Stressed: eyes = Eyes::Stress; mouth = Mouth::Wavy; break;
       case Mood::Busy: eyes = Eyes::Focus; mouth = Mouth::Flat; break;
-      case Mood::Relaxed: eyes = Eyes::Open; mouth = sipTimer_ > 0 ? Mouth::Round : Mouth::Open; break;
+      case Mood::Relaxed:
+        eyes = dragging_ ? Eyes::Closed : Eyes::Open;
+        mouth = dragging_ ? Mouth::Small : sipTimer_ > 0 || exhaling_ ? Mouth::Round : Mouth::Open;
+        break;
       default: eyes = Eyes::Open; mouth = Mouth::Small; break;
     }
   }
@@ -408,17 +432,22 @@ void Critter::update(const PetInput& in, float dt) {
   typePhase_ += dt * (mood_ == Mood::Working ? 16 : mood_ == Mood::Busy ? 25 : 34);
   updateKeys(dt);
 
-  // --- Café, cuando descansa ---
+  // --- Café y cigarro, por turnos, cuando descansa ---
   sipTimer_ = max(0.0f, sipTimer_ - dt);
+  smokeTimer_ = max(0.0f, smokeTimer_ - dt);
   if (relaxed && petTimer_ <= 0) {
-    nextSip_ -= dt;
-    if (nextSip_ <= 0) {
-      sipTimer_ = 2.6f;
-      nextSip_ = rnd(7, 14);
+    if (sipTimer_ <= 0 && smokeTimer_ <= 0 && (nextBreak_ -= dt) <= 0) {
+      if (nextIsSmoke_) smokeTimer_ = SMOKE_BREAK;
+      else sipTimer_ = 2.6f;
+      nextIsSmoke_ = !nextIsSmoke_;
+      nextBreak_ = rnd(7, 14);
     }
   } else {
-    sipTimer_ = 0;
+    sipTimer_ = smokeTimer_ = 0;
   }
+  const float smokePhase = fmodf(SMOKE_BREAK - smokeTimer_, SMOKE_CYCLE);
+  dragging_ = smokeTimer_ > 0 && smokePhase < DRAG_END;
+  exhaling_ = smokeTimer_ > 0 && smokePhase >= DRAG_END && smokePhase < EXHALE_END;
 
   // --- Postura según el humor ---
   const float keystroke = 0.14f * typing_;
@@ -441,6 +470,15 @@ void Critter::update(const PetInput& in, float dt) {
         aRZ = -0.3f;
         pitch = -0.08f;
         turn = 0;
+      }
+      if (smokeTimer_ > 0) {
+        // Lleva el cigarro a la boca; entre calada y calada lo deja a media altura
+        aLX = dragging_ ? -2.65f : -1.85f;
+        aLZ = dragging_ ? 0.45f : 0.05f;
+        if (dragging_ || exhaling_) {
+          pitch = -0.08f;
+          turn = 0;
+        }
       }
       break;
     case Mood::Working: break;
@@ -491,6 +529,10 @@ void Critter::update(const PetInput& in, float dt) {
   model_.part(tail_).rz = 0.14f * sinf(t_ * (sleeping ? 0.8f : 2.6f));
   model_.part(deskMug_).visible = sipTimer_ <= 0;
   model_.part(handMug_).visible = sipTimer_ > 0;
+  // El cigarro no gira con el brazo: siempre queda horizontal
+  model_.part(cigarette_).visible = smokeTimer_ > 0;
+  model_.part(cigarette_).rx = -armLX_;
+  model_.part(cigarette_).rz = -armLZ_;
 
   // Se pone roja con el calor
   uint8_t fr = species_.fur[0] + (uint8_t)((246 - species_.fur[0]) * heat_);
@@ -518,6 +560,19 @@ void Critter::update(const PetInput& in, float dt) {
   if (heat_ > 0.6f && (steamTimer_ -= dt) <= 0) {
     steamTimer_ = 0.32f;
     fx_.spawn(FxType::Steam, x + rnd(-24, 24), topY, rnd(-6, 6), -28, 1.1f, 2.5f);
+  }
+  if (smokeTimer_ > 0 && (tipSmokeTimer_ -= dt) <= 0) {
+    tipSmokeTimer_ = 0.3f;
+    int sx, sy;
+    model_.screenPos(cigarette_, CIGARETTE_TIP, sx, sy);
+    fx_.spawn(FxType::Smoke, sx, sy - 2, rnd(-16, -8), -20, 0.7f, 1);  // hacia fuera, lejos de la cara
+  }
+  if (exhaling_ && (exhaleTimer_ -= dt) <= 0) {
+    exhaleTimer_ = 0.11f;
+    int sx, sy;
+    model_.screenPos(head_, onFace(0, -22), sx, sy);
+    // Lo suelta hacia un lado, para no taparse la cara
+    fx_.spawn(FxType::Smoke, sx + rnd(-3, 3), sy + rnd(0, 3), rnd(42, 60), rnd(-7, 0), 1.1f, 2);
   }
   fx_.update(dt);
 }

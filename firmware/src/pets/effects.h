@@ -2,7 +2,7 @@
 #include "../gfx.h"
 
 // Partículas sencillas que cualquier mascota puede usar.
-enum class FxType : uint8_t { Heart, Zzz, Sweat, Steam };
+enum class FxType : uint8_t { Heart, Zzz, Sweat, Steam, Smoke };
 
 struct Particle {
   bool alive;

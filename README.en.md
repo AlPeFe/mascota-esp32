@@ -23,7 +23,7 @@ It lives on a 2.8" ESP32 touchscreen connected over USB and shows you how your P
 
 ## Features
 
-- 🐱 **Works when you work.** Use your keyboard or mouse and it types. Stop and it has a coffee. Leave and it falls asleep.
+- 🐱 **Works when you work.** Use your keyboard or mouse and it types. Stop and it has a coffee or a cigarette. Leave and it falls asleep.
 - 🕹️ **Custom PSX-style 3D engine.** No depth buffer, wobbly vertices and dithering, at about 18 frames per second on an ESP32.
 - 📊 **Resource monitor.** Per-core CPU, RAM, GPU, VRAM, temperature, disk and network, in a clean console style.
 - 👆 **Touch.** Pet it and hearts appear. Swipe to change screens.
@@ -40,7 +40,7 @@ It lives on a 2.8" ESP32 touchscreen connected over USB and shows you how your P
     <td align="center"><img src="docs/stress.png" width="200" alt="Red, stressed and steaming"><br><b>Stressed</b><br><sub>PC above 85%</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/rest.png" width="200" alt="Resting"><br><b>Resting</b><br><sub>45 s without input</sub></td>
+    <td align="center"><img src="docs/rest.png" width="200" alt="Resting with a cigarette"><br><b>Resting</b><br><sub>45 s without input: coffee and a cigarette</sub></td>
     <td align="center"><img src="docs/sleep.png" width="200" alt="Sleeping"><br><b>Sleeping</b><br><sub>3 min without input, or no connection</sub></td>
     <td align="center"><img src="docs/pet.png" width="200" alt="Happy, with hearts"><br><b>Cuddles</b><br><sub>When you touch it</sub></td>
   </tr>

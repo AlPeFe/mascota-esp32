@@ -24,6 +24,10 @@ void Effects::update(float dt) {
       case FxType::Zzz: p.vx = 8 * sinf(p.age * 3); break;
       case FxType::Sweat: p.vy += 140 * dt; break;
       case FxType::Steam: p.size += 6 * dt; break;
+      case FxType::Smoke:
+        p.size += 3 * dt;
+        p.vx += 12 * sinf(p.age * 5 + p.x) * dt;  // sube ondulando
+        break;
     }
     p.x += p.vx * dt;
     p.y += p.vy * dt;
@@ -37,10 +41,19 @@ static void drawHeart(Gfx& g, int x, int y, int s, uint16_t c) {
   g.fillTriangle(x - s, y - s / 2, x + s, y - s / 2, x, y + s, c);
 }
 
+// Hexágono, para el vapor y el humo.
+static void drawPuff(Gfx& g, int x, int y, int s, uint16_t c) {
+  g.fillTriangle(x - s, y, x + s, y, x - s / 2, y - s, c);
+  g.fillTriangle(x - s / 2, y - s, x + s, y, x + s / 2, y - s, c);
+  g.fillTriangle(x - s, y, x + s, y, x - s / 2, y + s, c);
+  g.fillTriangle(x - s / 2, y + s, x + s, y, x + s / 2, y + s, c);
+}
+
 void Effects::draw(Gfx& g) {
   static const uint16_t heart = rgb(235, 70, 110);
   static const uint16_t sweat = rgb(90, 170, 240);
   static const uint16_t steam = rgb(205, 208, 218);
+  static const uint16_t smoke = rgb(140, 145, 160);
 
   for (const Particle& p : p_) {
     if (!p.alive || p.y < SCENE_TOP) continue;
@@ -52,13 +65,8 @@ void Effects::draw(Gfx& g) {
         g.fillTriangle(x - s, y, x + s, y, x, y - s * 2 - 2, sweat);
         g.fillTriangle(x - s, y, x + s, y, x, y + s, sweat);
         break;
-      case FxType::Steam:
-        // Hexágono gris
-        g.fillTriangle(x - s, y, x + s, y, x - s / 2, y - s, steam);
-        g.fillTriangle(x - s / 2, y - s, x + s, y, x + s / 2, y - s, steam);
-        g.fillTriangle(x - s, y, x + s, y, x - s / 2, y + s, steam);
-        g.fillTriangle(x - s / 2, y + s, x + s, y, x + s / 2, y + s, steam);
-        break;
+      case FxType::Steam: drawPuff(g, x, y, s, steam); break;
+      case FxType::Smoke: drawPuff(g, x, y, max(s, 1), smoke); break;
     }
   }
 }

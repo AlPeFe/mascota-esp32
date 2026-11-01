@@ -56,6 +56,9 @@ class PolyModel {
   void prepare(const View& view);  // una vez por fotograma
   void draw(Gfx& g) const;         // una vez por franja
 
+  // Posición en pantalla de un punto de una pieza, según lo último preparado
+  void screenPos(int part, const Vec3& local, int& x, int& y) const;
+
   // Caja en pantalla de lo último preparado
   int minX() const { return minX_; }
   int maxX() const { return maxX_; }
@@ -63,8 +66,8 @@ class PolyModel {
   int maxY() const { return maxY_; }
 
  private:
-  static const int MAX_VERTS = 960;
-  static const int MAX_TRIS = 1000;
+  static const int MAX_VERTS = 1060;
+  static const int MAX_TRIS = 1080;
   static const int MAX_PARTS = 44;
   static const int MAX_COLORS = 24;
 
@@ -89,6 +92,7 @@ class PolyModel {
   int addVert(int part, const Vec3& p, const Vec3& n);
   void addTri(int part, int a, int b, int c, uint8_t color);
 
+  View view_;
   Vert* verts_;
   Tri* tris_;
   Projected* proj_;

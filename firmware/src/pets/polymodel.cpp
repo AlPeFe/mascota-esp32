@@ -128,7 +128,17 @@ static Vec3 rotate(const float* m, const Vec3& v) {
           m[6] * v.x + m[7] * v.y + m[8] * v.z};
 }
 
+void PolyModel::screenPos(int part, const Vec3& local, int& x, int& y) const {
+  const Part& p = parts_[part];
+  Vec3 w = rotate(p.R, {local.x * p.worldScale, local.y * p.worldScale, local.z * p.worldScale});
+  w = {w.x + p.pos.x, w.y + p.pos.y, w.z + p.pos.z};
+  float persp = CAMERA_DIST / (CAMERA_DIST - w.z * view_.scale);
+  x = (int)lroundf(view_.x + w.x * view_.scale * persp);
+  y = (int)lroundf(view_.floorY - w.y * view_.scale * persp);
+}
+
 void PolyModel::prepare(const View& view) {
+  view_ = view;
   // Jerarquía: los padres siempre se añaden antes que sus hijos
   for (int i = 0; i < partCount_; i++) {
     Part& p = parts_[i];
