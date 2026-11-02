@@ -21,7 +21,7 @@ Vive en una pantalla táctil ESP32 de 2,8" conectada por USB y te enseña de un 
 
 ## Qué hace
 
-- 🐱 **Trabaja cuando tú trabajas.** Si usas el teclado o el ratón, teclea. Si paras, se toma un café o se fuma un cigarro. Si te vas, se duerme.
+- 🐱 **Trabaja cuando tú trabajas.** Si usas el teclado o el ratón, teclea. De vez en cuando, al azar, da un sorbo de café o se fuma un cigarro. Si paras, descansa. Si te vas, se duerme.
 - 🕹️ **Motor 3D propio al estilo PSX.** Sin búfer de profundidad, con vértices que tiemblan y dithering, a unas 18 imágenes por segundo en un ESP32.
 - 📊 **Monitor de recursos.** CPU por núcleos, RAM, GPU, VRAM, temperatura, disco y red, en un estilo limpio de consola.
 - 👆 **Táctil.** Acaríciala y saldrán corazones. Desliza el dedo para cambiar de pantalla.
@@ -38,7 +38,7 @@ Vive en una pantalla táctil ESP32 de 2,8" conectada por USB y te enseña de un 
     <td align="center"><img src="docs/stress.png" width="200" alt="Rojo, agobiado y echando vapor"><br><b>Agobiado</b><br><sub>PC por encima del 85 %</sub></td>
   </tr>
   <tr>
-    <td align="center"><img src="docs/rest.png" width="200" alt="Descansando con un cigarro"><br><b>Descansando</b><br><sub>45 s sin tocar nada: café y cigarro</sub></td>
+    <td align="center"><img src="docs/rest.png" width="200" alt="Descansando con un cigarro"><br><b>Descansando</b><br><sub>45 s sin tocar nada</sub></td>
     <td align="center"><img src="docs/sleep.png" width="200" alt="Durmiendo"><br><b>Durmiendo</b><br><sub>3 min sin tocar nada o sin conexión</sub></td>
     <td align="center"><img src="docs/pet.png" width="200" alt="Contento, con corazones"><br><b>Mimos</b><br><sub>Cuando la tocas</sub></td>
   </tr>

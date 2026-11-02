@@ -38,7 +38,7 @@ const float REST_ARM_X = -1.47f, REST_ARM_Z = 0.15f;
 
 const float GRAVITY = 700;
 
-// Descanso para fumar: dos tandas de calada, soltar el humo y esperar
+// Cigarro: dos tandas de calada, soltar el humo y esperar
 const float SMOKE_BREAK = 9, SMOKE_CYCLE = 4.5f;
 const float DRAG_END = 1.3f, EXHALE_END = 2.5f;
 const Vec3 CIGARETTE_TIP = {-17, 0, 0};
@@ -342,11 +342,15 @@ void Critter::showFace() {
       case Mood::Sleeping: eyes = Eyes::Closed; mouth = Mouth::Round; break;
       case Mood::Stressed: eyes = Eyes::Stress; mouth = Mouth::Wavy; break;
       case Mood::Busy: eyes = Eyes::Focus; mouth = Mouth::Flat; break;
-      case Mood::Relaxed:
-        eyes = dragging_ ? Eyes::Closed : Eyes::Open;
-        mouth = dragging_ ? Mouth::Small : sipTimer_ > 0 || exhaling_ ? Mouth::Round : Mouth::Open;
-        break;
+      case Mood::Relaxed: eyes = Eyes::Open; mouth = Mouth::Open; break;
       default: eyes = Eyes::Open; mouth = Mouth::Small; break;
+    }
+    // Mientras bebe o fuma manda eso, sea cual sea el humor
+    if (dragging_) {
+      eyes = Eyes::Closed;
+      mouth = Mouth::Small;
+    } else if (sipTimer_ > 0 || exhaling_) {
+      mouth = Mouth::Round;
     }
   }
 
@@ -432,15 +436,15 @@ void Critter::update(const PetInput& in, float dt) {
   typePhase_ += dt * (mood_ == Mood::Working ? 16 : mood_ == Mood::Busy ? 25 : 34);
   updateKeys(dt);
 
-  // --- Café y cigarro, por turnos, cuando descansa ---
+  // --- Café y cigarro, por turnos y al azar: también mientras trabaja ---
   sipTimer_ = max(0.0f, sipTimer_ - dt);
   smokeTimer_ = max(0.0f, smokeTimer_ - dt);
-  if (relaxed && petTimer_ <= 0) {
+  if (!sleeping && mood_ != Mood::Stressed && petTimer_ <= 0) {
     if (sipTimer_ <= 0 && smokeTimer_ <= 0 && (nextBreak_ -= dt) <= 0) {
       if (nextIsSmoke_) smokeTimer_ = SMOKE_BREAK;
       else sipTimer_ = 2.6f;
       nextIsSmoke_ = !nextIsSmoke_;
-      nextBreak_ = rnd(7, 14);
+      nextBreak_ = relaxed ? rnd(7, 14) : rnd(15, 40);
     }
   } else {
     sipTimer_ = smokeTimer_ = 0;
@@ -465,21 +469,6 @@ void Critter::update(const PetInput& in, float dt) {
       break;
     case Mood::Relaxed:
       feet = 0.3f * sinf(t_ * 2.4f);  // balancea los pies
-      if (sipTimer_ > 0) {
-        aRX = -2.35f;
-        aRZ = -0.3f;
-        pitch = -0.08f;
-        turn = 0;
-      }
-      if (smokeTimer_ > 0) {
-        // Lleva el cigarro a la boca; entre calada y calada lo deja a media altura
-        aLX = dragging_ ? -2.65f : -1.85f;
-        aLZ = dragging_ ? 0.45f : 0.05f;
-        if (dragging_ || exhaling_) {
-          pitch = -0.08f;
-          turn = 0;
-        }
-      }
       break;
     case Mood::Working: break;
     case Mood::Busy:
@@ -491,6 +480,22 @@ void Critter::update(const PetInput& in, float dt) {
       turn = 0;
       shake = 1.3f * sinf(t_ * 37.0f);
       break;
+  }
+  // Bebe con una mano y fuma con la otra; la que queda libre sigue tecleando
+  if (sipTimer_ > 0) {
+    aRX = -2.35f;
+    aRZ = -0.3f;
+    pitch = -0.08f;
+    turn = 0;
+  }
+  if (smokeTimer_ > 0) {
+    // Lleva el cigarro a la boca; entre calada y calada lo deja a media altura
+    aLX = dragging_ ? -2.65f : -1.85f;
+    aLZ = dragging_ ? 0.45f : 0.05f;
+    if (dragging_ || exhaling_) {
+      pitch = -0.08f;
+      turn = 0;
+    }
   }
   if (petTimer_ > 0) {
     aLX = aRX = 0;

@@ -59,7 +59,7 @@ class Critter : public Pet {
   float pauseTimer_ = 0, nextPause_ = 4;  // se para a pensar de vez en cuando
   float flashTimer_ = 0;
 
-  // Descansos: café y cigarro, por turnos
+  // Café y cigarro, por turnos y al azar
   float sipTimer_ = 0, smokeTimer_ = 0, nextBreak_ = 3;
   bool nextIsSmoke_ = false;
   bool dragging_ = false, exhaling_ = false;  // calada y soltar el humo
