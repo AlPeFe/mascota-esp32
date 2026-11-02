@@ -94,6 +94,20 @@ fn main() {
         return; // ya hay otro monitor funcionando
     };
 
+    // Modo sin bandeja (--sin-bandeja): para servidores, SSH o cuando no hay
+    // escritorio. Solo envía los datos; se para con Ctrl+C o con systemd.
+    if std::env::args().any(|a| a == "--sin-bandeja") {
+        let on = !std::env::args().any(|a| a == "--apagado");
+        let control = Control::new(on);
+        eprintln!("mascota-monitor: sin bandeja, buscando la placa por USB");
+        worker::run(&control, |status| match status {
+            Status::Off => eprintln!("mascota-monitor: apagado"),
+            Status::Searching => eprintln!("mascota-monitor: buscando la placa..."),
+            Status::Connected(port) => eprintln!("mascota-monitor: conectado en {port}"),
+        });
+        return;
+    }
+
     let event_loop = EventLoopBuilder::<UserEvent>::with_user_event().build();
 
     let proxy = event_loop.create_proxy();

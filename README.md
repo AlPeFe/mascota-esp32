@@ -82,7 +82,7 @@ Los humores son los mismos para todas las mascotas; aquí salen el gato y el con
 
 - Una placa **ESP32-2432S028** con pantalla táctil de 2,8" (240×320), conocida como *Cheap Yellow Display*. La venden varias marcas, como Diymore.
 - Un cable USB que transmita datos.
-- Un PC con Windows. Con una gráfica NVIDIA verás también los datos de GPU.
+- Un PC con **Windows** o **Linux** (probado en Ubuntu 26.04). Con una gráfica NVIDIA verás también los datos de GPU.
 
 ## Instalación
 
@@ -173,21 +173,41 @@ cargo build --release
 > Apaga el monitor antes de cargar el firmware, porque ocupa el puerto USB.
 
 <details>
-<summary><b>Linux (experimental)</b></summary>
+<summary><b>Linux</b></summary>
 
-El código está preparado para Linux, pero **aún no se ha compilado ni probado allí**. Toda ayuda es bienvenida. Allí tampoco hay dato de actividad: la mascota trabaja cuando el PC supera el 20 % de uso, y la pantalla solo se apaga si dejan de llegar datos del PC.
-
-En Debian o Ubuntu necesita estas librerías:
+Compilado y probado en Ubuntu 26.04 (el icono de bandeja usa GTK y AppIndicator):
 
 ```bash
 sudo apt install libgtk-3-dev libayatana-appindicator3-dev libxdo-dev libudev-dev pkg-config
 ```
 
-Y permiso para usar el puerto serie (cierra sesión después):
+```bash
+cd monitor
+```
 
 ```bash
-sudo usermod -aG dialout $USER
+cargo build --release
 ```
+
+Sin escritorio (servidores, SSH, una sesión sin bandeja) hay un modo que solo envía los datos, sin icono. Es el que conviene para un servicio:
+
+```bash
+./mascota-monitor --sin-bandeja
+```
+
+Como servicio de usuario queda siempre encendido, incluso sin sesión abierta:
+
+```bash
+mkdir -p ~/.config/systemd/user
+```
+
+```bash
+# ExecStart=%h/apps/mascota-esp32/monitor/target/release/mascota-monitor --sin-bandeja
+systemctl --user enable --now mascota-monitor
+loginctl enable-linger $USER
+```
+
+Permiso para el puerto serie: estar en el grupo `dialout` (cierra sesión después) o una regla udev para el CH340 con `MODE="0666"`.
 
 </details>
 
@@ -226,7 +246,7 @@ El PC envía una línea JSON por segundo a 115200 baudios:
 ```
 
 - **Unidades:** las velocidades (`dr`, `dw`, `up`, `dn`) van en KB/s, las memorias en GB e `idle` en segundos.
-- **Saludo:** si el PC envía `?`, la placa responde `MASCOTA_ESP32 <versión>`.
+- **Saludo:** si el PC envía `?`, la placa responde `LAIN_ESP32 <versión>`.
 - **Depuración:** `!info` devuelve el estado de la placa; `!shot`, `!page N` y `!tap X Y` son los que usa `captura.py`.
 
 </details>
@@ -245,7 +265,7 @@ docs/           Imágenes de esta página
 ## Próximamente
 
 - [ ] Página de **tokens**: consumo de herramientas de IA. Ya está reservada en la interfaz.
-- [ ] Probar y pulir el soporte de **Linux**.
+- [x] Probar y pulir el soporte de **Linux**: compilado y probado en Ubuntu 26.04, con modo `--sin-bandeja` y servicio de usuario.
 - [ ] Probar la variante de pantalla `cyd2usb` en una placa real.
 - [ ] Más mascotas.
 
