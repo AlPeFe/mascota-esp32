@@ -9,7 +9,7 @@ use serialport::{ClearBuffer, SerialPort, SerialPortType};
 use crate::resources::Resources;
 
 const BAUD_RATE: u32 = 115_200;
-const GREETING: &str = "MASCOTA_ESP32";
+const GREETING: &str = "LAIN_ESP32";
 const SEND_INTERVAL: Duration = Duration::from_secs(1);
 const SEARCH_INTERVAL: Duration = Duration::from_secs(3);
 const HANDSHAKE_TIMEOUT: Duration = Duration::from_secs(6);

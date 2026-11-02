@@ -2,20 +2,31 @@
 #include "pet.h"
 
 // Colores: pelo, interior de las orejas, camiseta, raya, pantalón y zapatos.
+// Las dos últimas parejas son la melena y la cinta, que solo usa la chica.
 static const Critter::Species CAT = {
-    false, true, 1.0f,
+    Critter::Beast, false, true, 1.0f,
     {205, 212, 232}, {248, 196, 205}, {60, 118, 205}, {120, 205, 225}, {70, 78, 110}, {52, 58, 96},
+    {0, 0, 0}, {0, 0, 0},
 };
 static const Critter::Species BUNNY = {
-    true, false, 0.92f,
+    Critter::Beast, true, false, 0.92f,
     {245, 205, 218}, {252, 170, 185}, {90, 185, 150}, {245, 235, 170}, {80, 110, 130}, {90, 66, 90},
+    {0, 0, 0}, {0, 0, 0},
+};
+// Lain: piel, (sin orejas), uniforme, cuello blanco, falda, zapatos, melena y cinta.
+static const Critter::Species LAIN = {
+    Critter::Human, false, false, 1.0f,
+    {246, 216, 200}, {232, 190, 186}, {56, 72, 122}, {236, 238, 245}, {42, 54, 98}, {40, 38, 48},
+    {74, 56, 58}, {196, 46, 58},
 };
 
 static Pet* createCat() { return new Critter(CAT); }
 static Pet* createBunny() { return new Critter(BUNNY); }
+static Pet* createLain() { return new Critter(LAIN); }
 
 // Lista de mascotas disponibles. La primera es la que sale por defecto.
 const PetInfo PETS[] = {
+    {"Lain", createLain},
     {"Gato", createCat},
     {"Conejo", createBunny},
 };
@@ -35,13 +46,14 @@ Mood moodFrom(const PetInput& in) {
   return Mood::Relaxed;
 }
 
+// Los humores, contados a su manera: siempre conectada a algo.
 const char* moodName(Mood m) {
   switch (m) {
-    case Mood::Sleeping: return "durmiendo";
-    case Mood::Relaxed: return "descansando";
-    case Mood::Working: return "trabajando";
+    case Mood::Sleeping: return "desconectada";
+    case Mood::Relaxed: return "despierta";
+    case Mood::Working: return "conectada";
     case Mood::Busy: return "a tope";
-    case Mood::Stressed: return "agobiado";
+    case Mood::Stressed: return "saturada";
   }
   return "";
 }

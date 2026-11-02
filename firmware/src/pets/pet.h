@@ -34,6 +34,10 @@ class Pet {
   virtual void draw(Gfx& g) = 0;               // solo la mascota y sus efectos
   virtual void onTap(int x, int y) = 0;        // toque dentro de la escena
   virtual Mood mood() const = 0;
+  // Para la orden !info: vértices, triángulos y piezas que usa el modelo.
+  virtual void modelStats(int& verts, int& tris, int& parts, int& maxV, int& maxT, int& maxP) const {
+    verts = tris = parts = maxV = maxT = maxP = 0;
+  }
 };
 
 struct PetInfo {

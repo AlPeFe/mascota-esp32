@@ -232,9 +232,12 @@ static void handleCommand(const char* cmd) {
   if (strcmp(cmd, "!shot") == 0) {
     sendScreenshot();
   } else if (strcmp(cmd, "!info") == 0) {
-    Serial.printf("INFO w=%d h=%d rot=%d page=%d stripH=%d renderMs=%u heap=%u maxBlock=%u tap=%d,%d dataAgeMs=%u cpu=%.1f ram=%.1f gpu=%s idle=%d screenOff=%d backlight=%u\n",
+    int v, t, p, maxV, maxT, maxP;
+    if (pet) pet->modelStats(v, t, p, maxV, maxT, maxP);
+    Serial.printf("INFO w=%d h=%d rot=%d page=%d stripH=%d renderMs=%u heap=%u maxBlock=%u tap=%d,%d dataAgeMs=%u cpu=%.1f ram=%.1f gpu=%s idle=%d screenOff=%d backlight=%u model=%d/%d verts %d/%d tris %d/%d parts\n",
                   SCREEN_W, SCREEN_H, rotation, page, stripH, renderMs, ESP.getFreeHeap(),
-                  ESP.getMaxAllocHeap(), lastTapX, lastTapY, millis() - stats.lastMs, stats.cpu, stats.ram, stats.gpuName, stats.idle, screenOff, ledcRead(BL_CHANNEL));
+                  ESP.getMaxAllocHeap(), lastTapX, lastTapY, millis() - stats.lastMs, stats.cpu, stats.ram, stats.gpuName, stats.idle, screenOff, ledcRead(BL_CHANNEL),
+                  v, maxV, t, maxT, p, maxP);
   } else if (sscanf(cmd, "!page %d", &a) == 1) {
     goPage(a);
   } else if (sscanf(cmd, "!tap %d %d", &a, &b) == 2) {
@@ -249,8 +252,11 @@ static void splash() {
   tft.setTextDatum(MC_DATUM);
   tft.setTextColor(col::text);
   tft.setTextSize(3);
-  tft.drawString("Mascota", SCREEN_W / 2, 40, 1);
+  tft.drawString("Lain", SCREEN_W / 2, 36, 1);
   tft.setTextSize(1);
+  tft.setTextColor(col::muted);
+  tft.drawString("en la Wired", SCREEN_W / 2, 60, 1);
+  tft.setTextColor(col::text);
 
   const char* names[3] = {"ROJO", "VERDE", "AZUL"};
   const uint16_t colors[3] = {TFT_RED, TFT_GREEN, TFT_BLUE};

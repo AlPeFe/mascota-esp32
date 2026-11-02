@@ -1,7 +1,7 @@
 #pragma once
 #include <Arduino.h>
 
-#define FIRMWARE_VERSION "2.4"
+#define FIRMWARE_VERSION "3.0"
 
 // --- Táctil XPT2046 (va en su propio bus SPI) ---
 #define TOUCH_CS 33

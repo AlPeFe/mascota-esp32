@@ -14,6 +14,7 @@ enum Color : uint8_t {
   C_INK, C_WHITE, C_BLUSH, C_MOUTH, C_NOSE,
   C_DESK, C_DESK_LEG, C_CHAIR, C_KEYBOARD, C_KEY, C_CRT, C_CRT_DARK, C_MUG, C_FLASH,
   C_CIGARETTE, C_FILTER, C_EMBER, C_ASHTRAY,
+  C_HAIR, C_ACCENT, C_DEVICE, C_SCREEN, C_HAIR_HI,
 };
 
 // La cámara mira un poco desde arriba, para que se vea la mesa y el teclado
@@ -42,6 +43,8 @@ const float GRAVITY = 700;
 const float SMOKE_BREAK = 9, SMOKE_CYCLE = 4.5f;
 const float DRAG_END = 1.3f, EXHALE_END = 2.5f;
 const Vec3 CIGARETTE_TIP = {-17, 0, 0};
+// El cacharro de Lain: por dónde sale la imagen cuando lo mira
+const Vec3 DEVICE_TIP = {-6, 0, 2};
 
 float rnd(float a, float b) { return a + (b - a) * (esp_random() / 4294967295.0f); }
 
@@ -92,6 +95,27 @@ void addMug(PolyModel& m, int part) {
   m.lathe(part, r, 2, 6);
 }
 
+// Trozo de torno: solo las caras laterales de los segmentos pedidos, sin tapas.
+// Sirve para el pelo: una melena deja la cara al descubierto.
+void latheSlice(PolyModel& m, int part, const Ring* rings, int count, int segments, int from, int to) {
+  const float step = TWO_PI / segments;
+  for (int i = 0; i + 1 < count; i++) {
+    const Ring& r0 = rings[i];
+    const Ring& r1 = rings[i + 1];
+    for (int j = from; j < to; j++) {
+      const float a0 = (j + 0.5f) * step, a1 = (j + 1.5f) * step;
+      const float am = (a0 + a1) / 2;
+      const Vec3 q[4] = {
+          {r0.ox + cosf(a0) * r0.rx, r0.y, r0.oz + sinf(a0) * r0.rz},
+          {r0.ox + cosf(a1) * r0.rx, r0.y, r0.oz + sinf(a1) * r0.rz},
+          {r1.ox + cosf(a1) * r1.rx, r1.y, r1.oz + sinf(a1) * r1.rz},
+          {r1.ox + cosf(a0) * r1.rx, r1.y, r1.oz + sinf(a0) * r1.rz},
+      };
+      m.poly(part, q, 4, rings[i].color, {cosf(am), 0, sinf(am)});
+    }
+  }
+}
+
 }  // namespace
 
 Critter::Critter(const Species& species) : species_(species) {
@@ -102,11 +126,19 @@ Critter::Critter(const Species& species) : species_(species) {
   setRgb(C_STRIPE, species_.stripe);
   setRgb(C_SHORTS, species_.shorts);
   setRgb(C_SHOE, species_.shoe);
+  setRgb(C_HAIR, species_.hair);
+  setRgb(C_ACCENT, species_.accent);
+  model_.setColor(C_DEVICE, 52, 54, 66);
+  model_.setColor(C_SCREEN, 110, 240, 225);
+  // Brillo del pelo: un tono por encima, para que la melena tenga volumen
+  model_.setColor(C_HAIR_HI, species_.hair[0] + 26, species_.hair[1] + 22, species_.hair[2] + 20);
   model_.setColor(C_INK, 34, 30, 46);
   model_.setColor(C_WHITE, 255, 255, 255);
   model_.setColor(C_BLUSH, 244, 150, 150);
   model_.setColor(C_MOUTH, 110, 40, 60);
-  model_.setColor(C_NOSE, 225, 110, 120);
+  // En una cara humana la nariz es solo una sombra de la piel
+  if (species_.kind == Human) model_.setColor(C_NOSE, species_.fur[0] - 34, species_.fur[1] - 62, species_.fur[2] - 66);
+  else model_.setColor(C_NOSE, 225, 110, 120);
   model_.setColor(C_DESK, 216, 220, 230);
   model_.setColor(C_DESK_LEG, 150, 156, 172);
   model_.setColor(C_CHAIR, 92, 98, 120);
@@ -120,6 +152,16 @@ Critter::Critter(const Species& species) : species_(species) {
   model_.setColor(C_FILTER, 225, 160, 90);
   model_.setColor(C_EMBER, 255, 90, 20);
   model_.setColor(C_ASHTRAY, 130, 136, 150);
+
+  // La escena de Lain: un cuarto más apagado y la maquinaria en gris oscuro
+  if (species_.kind == Human) {
+    model_.setColor(C_CHAIR, 70, 76, 98);
+    model_.setColor(C_DESK, 228, 231, 240);
+    model_.setColor(C_DESK_LEG, 158, 164, 182);
+    model_.setColor(C_CRT, 74, 78, 92);
+    model_.setColor(C_CRT_DARK, 48, 52, 64);
+    model_.setColor(C_KEYBOARD, 104, 110, 130);
+  }
 
   // La cámara es la pieza raíz: al girarla se ve todo un poco desde arriba
   int camera = model_.addPart(-1, 0, CAMERA_PIVOT_Y, 0);
@@ -172,28 +214,52 @@ void Critter::buildDesk(int parent) {
   deskMug_ = model_.addPart(parent, 72, DESK_Y + 14, 28, 18);
   addMug(model_, deskMug_);
 
-  // Cenicero
-  int ashtray = model_.addPart(parent, 80, DESK_Y + 3, 52, 18);
-  const Ring ash[] = {{0, 8, 7, C_ASHTRAY}, {-3, 7, 6, C_ASHTRAY}};
-  model_.lathe(ashtray, ash, 2, 6);
+  if (human()) {
+    // Un cacharro conectado a la Wired, con su lucecita encima
+    int hub = model_.addPart(parent, 76, DESK_Y + 3, 50, 18);
+    model_.box(hub, -10, 10, 0, 6, -7, 7, C_DEVICE);
+    model_.box(hub, -7, 7, 6, 6.6f, -5, 5, C_SCREEN);
+    model_.box(hub, 2, 5, 6.6f, 8.5f, -2, 1, C_SCREEN);
+  } else {
+    // Cenicero
+    int ashtray = model_.addPart(parent, 80, DESK_Y + 3, 52, 18);
+    const Ring ash[] = {{0, 8, 7, C_ASHTRAY}, {-3, 7, 6, C_ASHTRAY}};
+    model_.lathe(ashtray, ash, 2, 6);
+  }
 }
 
 void Critter::buildBody(int parent) {
   body_ = model_.addPart(parent, 0, 0, 0);
 
-  // Tronco: camiseta con una raya y pantalón corto
-  const Ring torso[] = {{NECK_Y, 13, 11, C_SHIRT}, {70, 20, 15, C_STRIPE}, {61, 23, 17, C_SHIRT},
-                        {46, 24, 18, C_SHORTS},    {34, 22, 17, C_SHORTS}};
-  model_.lathe(body_, torso, 5, 6);
+  if (human()) {
+    // Uniforme: blusa, cuello con cinta y falda con vuelo
+    const Ring torso[] = {{NECK_Y, 13, 11, C_SHIRT}, {74, 19.5f, 14, C_SHIRT}, {66, 22, 16, C_STRIPE},
+                          {58, 23, 17, C_SHIRT},     {44, 27, 20, C_SHORTS}, {28, 32, 23, C_SHORTS}};
+    model_.lathe(body_, torso, 6, 6);
 
-  // Cola, asomando por un lado de la silla
-  tail_ = model_.addPart(body_, 16, 42, -14, -10);
-  if (species_.longTail) {
-    const Ring t[] = {{42, 2.5f, 2.5f, C_FUR, 32, -4}, {30, 4, 4, C_FUR, 26, -4}, {14, 5, 5, C_FUR, 12, -2}, {0, 5, 5, C_FUR, 0, 0}};
-    model_.lathe(tail_, t, 4, 4);
+    // Cinta al cuello: dos alas cortas y el nudo, pegados al pecho
+    ribbon_ = model_.addPart(body_, 0, 0, 0, 50, true);
+    const Vec3 wingL[] = {{-1.5f, 64, 17}, {-1.5f, 68, 17}, {-11, 72, 17}, {-11, 61, 17}};
+    const Vec3 wingR[] = {{1.5f, 64, 17}, {11, 61, 17}, {11, 72, 17}, {1.5f, 68, 17}};
+    const Vec3 knot[] = {{-2.5f, 62, 17}, {2.5f, 62, 17}, {2.5f, 70, 17}, {-2.5f, 70, 17}};
+    model_.poly(ribbon_, wingL, 4, C_ACCENT);
+    model_.poly(ribbon_, wingR, 4, C_ACCENT);
+    model_.poly(ribbon_, knot, 4, C_ACCENT);
   } else {
-    const Ring t[] = {{9, 5, 5, C_FUR, 8, -8}, {4, 10, 10, C_FUR, 8, -8}, {-4, 10, 10, C_FUR, 8, -8}, {-9, 5, 5, C_FUR, 8, -8}};
-    model_.lathe(tail_, t, 4, 6);
+    // Tronco: camiseta con una raya y pantalón corto
+    const Ring torso[] = {{NECK_Y, 13, 11, C_SHIRT}, {70, 20, 15, C_STRIPE}, {61, 23, 17, C_SHIRT},
+                          {46, 24, 18, C_SHORTS},    {34, 22, 17, C_SHORTS}};
+    model_.lathe(body_, torso, 5, 6);
+
+    // Cola, asomando por un lado de la silla
+    tail_ = model_.addPart(body_, 16, 42, -14, -10);
+    if (species_.longTail) {
+      const Ring t[] = {{42, 2.5f, 2.5f, C_FUR, 32, -4}, {30, 4, 4, C_FUR, 26, -4}, {14, 5, 5, C_FUR, 12, -2}, {0, 5, 5, C_FUR, 0, 0}};
+      model_.lathe(tail_, t, 4, 4);
+    } else {
+      const Ring t[] = {{9, 5, 5, C_FUR, 8, -8}, {4, 10, 10, C_FUR, 8, -8}, {-4, 10, 10, C_FUR, 8, -8}, {-9, 5, 5, C_FUR, 8, -8}};
+      model_.lathe(tail_, t, 4, 6);
+    }
   }
 
   // Piernas sentadas: muslo hacia delante y espinilla colgando con su zapato
@@ -224,11 +290,16 @@ void Critter::buildBody(int parent) {
   model_.part(handMug_).rx = 2.35f;
   addMug(model_, handMug_);
 
-  // Cigarro en la otra mano: solo se ve mientras fuma
-  cigarette_ = model_.addPart(armL_, 0, -36, 6, 70);
-  model_.box(cigarette_, -2, 3, -1.3f, 1.3f, -1.3f, 1.3f, C_FILTER);
-  model_.box(cigarette_, -14, -2, -1.3f, 1.3f, -1.3f, 1.3f, C_CIGARETTE);
-  model_.box(cigarette_, -17, -14, -1.3f, 1.3f, -1.3f, 1.3f, C_EMBER);
+  // Lo que lleva en la otra mano: un cigarro, o su cacharro conectado
+  handProp_ = model_.addPart(armL_, 0, -36, 6, 70);
+  if (human()) {
+    model_.box(handProp_, -3, 3, -8, 4, -1.2f, 1.2f, C_DEVICE);
+    model_.box(handProp_, -2.5f, 2.5f, -7, 3, 1.2f, 1.8f, C_SCREEN);
+  } else {
+    model_.box(handProp_, -2, 3, -1.3f, 1.3f, -1.3f, 1.3f, C_FILTER);
+    model_.box(handProp_, -14, -2, -1.3f, 1.3f, -1.3f, 1.3f, C_CIGARETTE);
+    model_.box(handProp_, -17, -14, -1.3f, 1.3f, -1.3f, 1.3f, C_EMBER);
+  }
 
   // Cabeza octogonal, con el pivote en el cuello
   head_ = model_.addPart(body_, 0, NECK_Y, 0, 22);
@@ -237,6 +308,11 @@ void Critter::buildBody(int parent) {
       {HEAD_Y + HEAD_RY * 0.10f, HEAD_RX, HEAD_RZ, C_FUR},         {HEAD_Y - HEAD_RY * 0.45f, HEAD_RX * 0.95f, HEAD_RZ * 0.95f, C_FUR},
       {HEAD_Y - HEAD_RY * 0.85f, HEAD_RX * 0.65f, HEAD_RZ * 0.65f, C_FUR}, {HEAD_Y - HEAD_RY, HEAD_RX * 0.40f, HEAD_RZ * 0.40f, C_FUR}};
   model_.lathe(head_, h, 6, 8);
+
+  if (human()) {
+    buildHair();
+    return;
+  }
 
   // Orejas: salen de la parte alta de la cabeza
   for (int side = -1; side <= 1; side += 2) {
@@ -257,9 +333,36 @@ void Critter::buildBody(int parent) {
   }
 }
 
+// Melena corta tipo bob, en dos piezas: arriba el pelo cubre todo el cráneo y
+// la frente (ahí está el flequillo); a partir de la línea de los ojos solo
+// quedan nuca y lados, que es el hueco por el que se ve la cara.
+void Critter::buildHair() {
+  const int SEG = 12;
+  const Ring melena[] = {
+      {HEAD_Y + 48, 0.6f, 0.6f, C_HAIR},  // punta: cierra la coronilla
+      {HEAD_Y + 34, 46, 38, C_HAIR_HI},   // brillo, arriba
+      {HEAD_Y + 24, 53, 44, C_HAIR},      // borde del flequillo
+      {HEAD_Y - 8, 56, 46, C_HAIR},
+      {HEAD_Y - 28, 52, 42, C_HAIR},
+      {HEAD_Y - 46, 44, 36, C_HAIR},  // puntas a la altura de la mandíbula
+  };
+  hair_ = model_.addPart(head_, 0, 0, 0, 40);
+  latheSlice(model_, hair_, melena, 3, SEG, 0, SEG);       // cráneo y flequillo
+  latheSlice(model_, hair_, melena + 2, 4, SEG, 4, SEG);   // nuca y lado derecho
+  latheSlice(model_, hair_, melena + 2, 4, SEG, 0, 1);     // el trozo que cruza la nuca
+
+  // Mechón que le cuelga por detrás: es la "cola" de esta especie, y se mueve
+  tail_ = model_.addPart(head_, 0, HEAD_Y - 12, -34, -14);
+  const Ring tuft[] = {{10, 7, 6, C_HAIR}, {-4, 9, 7, C_HAIR_HI}, {-20, 7, 6, C_HAIR}, {-34, 3, 3, C_HAIR}};
+  model_.lathe(tail_, tuft, 4, 5);
+}
+
 void Critter::buildFace() {
   // Las "pegatinas" se ordenan siempre por delante de la cabeza
   auto decal = [&]() { return model_.addPart(head_, 0, 0, 0, 80, true); };
+
+  // Cara de persona: nada que pegar, la piel de la cabeza ya se ve por el hueco
+  // que deja la melena.
 
   int fixed = decal();
   const float noseY = -9;
@@ -268,8 +371,9 @@ void Critter::buildFace() {
   model_.poly(fixed, nose, 3, C_NOSE);
 
   blush_ = decal();
-  faceOval(model_, blush_, -42, -14, 10, 6, 6, C_BLUSH);
-  faceOval(model_, blush_, 42, -14, 10, 6, 6, C_BLUSH);
+  const float bx = human() ? 36 : 42;
+  faceOval(model_, blush_, -bx, -14, 10, 6, 6, C_BLUSH);
+  faceOval(model_, blush_, bx, -14, 10, 6, 6, C_BLUSH);
 
   eyesOpen_ = decal();
   eyesBlink_ = decal();
@@ -328,6 +432,18 @@ void Critter::buildFace() {
 
   const float wavy[] = {-14, my - 2, -7, my + 3, 0, my - 2, 7, my + 3, 14, my - 2};
   faceStroke(model_, mouthWavy_, wavy, 5, 3, C_INK);
+
+  if (!human()) return;
+
+  // El mechón largo que le cae sobre la cara: el detalle que la hace ser ella.
+  // Empieza entre los ojos y se va hacia la mejilla, sin taparle la mirada.
+  strand_ = model_.addPart(head_, 0, 0, 0, 96, true);
+  const float lockA[] = {-6, 28, -12, 8};
+  const float lockB[] = {-12, 8, -24, -10};
+  const float lockC[] = {-24, -10, -30, -32};
+  faceStroke(model_, strand_, lockA, 2, 6, C_HAIR);
+  faceStroke(model_, strand_, lockB, 2, 4.5f, C_HAIR);
+  faceStroke(model_, strand_, lockC, 2, 3, C_HAIR);
 }
 
 void Critter::showFace() {
@@ -531,18 +647,19 @@ void Critter::update(const PetInput& in, float dt) {
   model_.part(armR_).rx = armRX_;
   model_.part(shinL_).rx = THIGH_ANGLE - feet_;
   model_.part(shinR_).rx = THIGH_ANGLE + feet_;
-  model_.part(tail_).rz = 0.14f * sinf(t_ * (sleeping ? 0.8f : 2.6f));
+  model_.part(tail_).rz = (human() ? 0.07f : 0.14f) * sinf(t_ * (sleeping ? 0.8f : 2.6f));
   model_.part(deskMug_).visible = sipTimer_ <= 0;
   model_.part(handMug_).visible = sipTimer_ > 0;
-  // El cigarro no gira con el brazo: siempre queda horizontal
-  model_.part(cigarette_).visible = smokeTimer_ > 0;
-  model_.part(cigarette_).rx = -armLX_;
-  model_.part(cigarette_).rz = -armLZ_;
+  // El cigarro (o el cacharro) no gira con el brazo: siempre queda horizontal
+  model_.part(handProp_).visible = smokeTimer_ > 0;
+  model_.part(handProp_).rx = -armLX_;
+  model_.part(handProp_).rz = -armLZ_;
 
-  // Se pone roja con el calor
-  uint8_t fr = species_.fur[0] + (uint8_t)((246 - species_.fur[0]) * heat_);
-  uint8_t fg = species_.fur[1] - (uint8_t)((species_.fur[1] - 110) * heat_);
-  uint8_t fb = species_.fur[2] - (uint8_t)((species_.fur[2] - 95) * heat_);
+  // Se pone roja con el calor (a una persona se le nota menos que a un bicho)
+  const float flush = human() ? heat_ * 0.42f : heat_;
+  uint8_t fr = species_.fur[0] + (uint8_t)((246 - species_.fur[0]) * flush);
+  uint8_t fg = species_.fur[1] - (uint8_t)((species_.fur[1] - 110) * flush);
+  uint8_t fb = species_.fur[2] - (uint8_t)((species_.fur[2] - 95) * flush);
   model_.setColor(C_FUR, fr, fg, fb);
 
   showFace();
@@ -566,18 +683,20 @@ void Critter::update(const PetInput& in, float dt) {
     steamTimer_ = 0.32f;
     fx_.spawn(FxType::Steam, x + rnd(-24, 24), topY, rnd(-6, 6), -28, 1.1f, 2.5f);
   }
+  // El humo del cigarro es, en el caso de Lain, la luz de su cacharro
+  const FxType puff = human() ? FxType::Data : FxType::Smoke;
   if (smokeTimer_ > 0 && (tipSmokeTimer_ -= dt) <= 0) {
     tipSmokeTimer_ = 0.3f;
     int sx, sy;
-    model_.screenPos(cigarette_, CIGARETTE_TIP, sx, sy);
-    fx_.spawn(FxType::Smoke, sx, sy - 2, rnd(-16, -8), -20, 0.7f, 1);  // hacia fuera, lejos de la cara
+    model_.screenPos(handProp_, human() ? DEVICE_TIP : CIGARETTE_TIP, sx, sy);
+    fx_.spawn(puff, sx, sy - 2, rnd(-16, -8), -20, 0.7f, 1);  // hacia fuera, lejos de la cara
   }
   if (exhaling_ && (exhaleTimer_ -= dt) <= 0) {
     exhaleTimer_ = 0.11f;
     int sx, sy;
     model_.screenPos(head_, onFace(0, -22), sx, sy);
     // Lo suelta hacia un lado, para no taparse la cara
-    fx_.spawn(FxType::Smoke, sx + rnd(-3, 3), sy + rnd(0, 3), rnd(42, 60), rnd(-7, 0), 1.1f, 2);
+    fx_.spawn(puff, sx + rnd(-3, 3), sy + rnd(0, 3), rnd(42, 60), rnd(-7, 0), 1.1f, 2);
   }
   fx_.update(dt);
 }

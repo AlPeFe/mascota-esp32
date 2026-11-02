@@ -2,7 +2,8 @@
 #include "../gfx.h"
 
 // Partículas sencillas que cualquier mascota puede usar.
-enum class FxType : uint8_t { Heart, Zzz, Sweat, Steam, Smoke };
+// Data: la luz que escupe el cacharro de Lain cuando lo mira.
+enum class FxType : uint8_t { Heart, Zzz, Sweat, Steam, Smoke, Data };
 
 struct Particle {
   bool alive;

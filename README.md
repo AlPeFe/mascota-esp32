@@ -8,6 +8,23 @@
 
 Vive en una pantalla táctil ESP32 de 2,8" conectada por USB y te enseña de un vistazo cómo va tu PC.
 
+> **Ahora es Lain.** La mascota por defecto es Lain Iwakura, la chica de *Serial Experiments Lain*: melena corta con el mechón que le cae sobre la cara, uniforme con cinta al cuello y un cacharro conectado que consulta entre tecla y tecla. El gato y el conejo siguen ahí, en *Ajustes → Mascota*.
+
+## Lain
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/lain-work.png" width="200" alt="Lain tecleando"><br><b>Conectada</b><br><sub>Estás usando el PC</sub></td>
+    <td align="center"><img src="docs/lain-stress.png" width="200" alt="Lain saturada, con vapor"><br><b>Saturada</b><br><sub>PC por encima del 85 %</sub></td>
+    <td align="center"><img src="docs/lain-sleep.png" width="200" alt="Lain desconectada, dormida"><br><b>Desconectada</b><br><sub>3 min sin actividad o sin PC</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/lain-pet.png" width="200" alt="Lain contenta, con corazones"><br><b>Mimos</b><br><sub>Cuando la tocas</sub></td>
+    <td align="center"><img src="docs/lain-settings.png" width="200" alt="Ajustes con la mascota Lain"><br><b>Ajustes</b><br><sub>Lain, gato o conejo</sub></td>
+    <td align="center"><br><sub>Cuando lo mira, el cacharro<br>escupe luz de la Wired<br>en vez de humo.</sub></td>
+  </tr>
+</table>
+
 [![Licencia: MIT](https://img.shields.io/badge/licencia-MIT-blue)](LICENSE)
 [![ESP32](https://img.shields.io/badge/placa-ESP32--2432S028-e7352c)](#qué-necesitas)
 [![Firmware: C++](https://img.shields.io/badge/firmware-C%2B%2B-00599c)](firmware)
@@ -21,7 +38,7 @@ Vive en una pantalla táctil ESP32 de 2,8" conectada por USB y te enseña de un 
 
 ## Qué hace
 
-- 🐱 **Trabaja cuando tú trabajas.** Si usas el teclado o el ratón, teclea. De vez en cuando, al azar, da un sorbo de café o se fuma un cigarro. Si paras, descansa. Si te vas, se duerme.
+- 🐱 **Trabaja cuando tú trabajas.** Si usas el teclado o el ratón, teclea. De vez en cuando, al azar, da un sorbo de café o consulta su cacharro conectado (el gato y el conejo se fuman un cigarro). Si paras, descansa. Si te vas, se duerme.
 - 🕹️ **Motor 3D propio al estilo PSX.** Sin búfer de profundidad, con vértices que tiemblan y dithering, a unas 18 imágenes por segundo en un ESP32.
 - 📊 **Monitor de recursos.** CPU por núcleos, RAM, GPU, VRAM, temperatura, disco y red, en un estilo limpio de consola.
 - 👆 **Táctil.** Acaríciala y saldrán corazones. Desliza el dedo para cambiar de pantalla.
@@ -30,6 +47,8 @@ Vive en una pantalla táctil ESP32 de 2,8" conectada por USB y te enseña de un 
 - 🪶 **Monitor ligero en la bandeja.** Un solo ejecutable de Rust que puedes apagar con dos clics.
 
 ## Humores
+
+Los humores son los mismos para todas las mascotas; aquí salen el gato y el conejo. En pantalla se llaman *desconectada*, *despierta*, *conectada*, *a tope* y *saturada*.
 
 <table>
   <tr>
@@ -174,15 +193,18 @@ sudo usermod -aG dialout $USER
 
 ## Personalizar
 
-**Una mascota nueva.** Añade una especie en [`pets.cpp`](firmware/src/pets/pets.cpp) con su tipo de orejas y cola, su tamaño y sus colores. Aparecerá en *Ajustes → Mascota*:
+**Una mascota nueva.** Añade una especie en [`pets.cpp`](firmware/src/pets/pets.cpp) con su tipo (`Beast` para un bicho, `Human` para una persona), su tamaño y sus colores. Aparecerá en *Ajustes → Mascota*:
 
 ```cpp
 static const Critter::Species CAT = {
-    false, true, 1.0f,  // orejas largas, cola larga, tamaño
+    Critter::Beast, false, true, 1.0f,  // bicho, orejas largas, cola larga, tamaño
     {205, 212, 232}, {248, 196, 205}, {60, 118, 205}, {120, 205, 225}, {70, 78, 110}, {52, 58, 96},
-    // pelo, interior de orejas, camiseta, raya, pantalón, zapatos
+    {0, 0, 0}, {0, 0, 0},
+    // pelo, interior de orejas, camiseta, raya, pantalón, zapatos, melena y cinta
 };
 ```
+
+Con `Human` la cabeza cambia: melena, flequillo y mechón largo sobre la cara en vez de orejas, falda con vuelo y cinta al cuello. Así está hecha Lain.
 
 **Otras formas.** Añade piezas en `buildBody()` o `buildDesk()` de [`critter.cpp`](firmware/src/pets/critter.cpp), o crea otra clase que herede de `Pet`.
 

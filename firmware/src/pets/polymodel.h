@@ -65,11 +65,19 @@ class PolyModel {
   int minY() const { return minY_; }
   int maxY() const { return maxY_; }
 
+  // Cuánto ocupa el modelo: sirve para ajustar los topes y ver si algo se corta
+  int vertCount() const { return vertCount_; }
+  int triCount() const { return triCount_; }
+  int partCount() const { return partCount_; }
+  static int maxVerts() { return MAX_VERTS; }
+  static int maxTris() { return MAX_TRIS; }
+  static int maxParts() { return MAX_PARTS; }
+
  private:
-  static const int MAX_VERTS = 1060;
-  static const int MAX_TRIS = 1080;
-  static const int MAX_PARTS = 44;
-  static const int MAX_COLORS = 24;
+  static const int MAX_VERTS = 1600;
+  static const int MAX_TRIS = 1600;
+  static const int MAX_PARTS = 56;
+  static const int MAX_COLORS = 32;
 
   struct Vert {
     Vec3 p, n;

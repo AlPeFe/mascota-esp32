@@ -59,7 +59,7 @@ static bool parseResources(JsonDocument& doc) {
 static bool handleLine(const char* line) {
   // Saludo: el monitor manda "?" para encontrar el puerto de la mascota.
   if (strcmp(line, "?") == 0) {
-    Serial.println("MASCOTA_ESP32 " FIRMWARE_VERSION);
+    Serial.println("LAIN_ESP32 " FIRMWARE_VERSION);
     return false;
   }
   if (line[0] == '!') {
