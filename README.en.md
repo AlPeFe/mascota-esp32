@@ -8,6 +8,12 @@
 
 It lives on a 2.8" ESP32 touchscreen connected over USB and shows you how your PC is doing at a glance.
 
+> **It's Lain now.** The default pet is Lain Iwakura, the girl from *Serial Experiments Lain*: short hair with the long strand falling over her face, a uniform with a ribbon at the collar and a little connected device she checks between keystrokes. The cat and the bunny are still there, under *Settings → Pet*.
+
+| Connected | Overloaded | Disconnected |
+|---|---|---|
+| ![Lain typing](docs/lain-work.png) | ![Lain stressed](docs/lain-stress.png) | ![Lain asleep](docs/lain-sleep.png) |
+
 *"Mascota" is Spanish for "pet". The on-device interface and code comments are in Spanish.*
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)

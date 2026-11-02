@@ -4,15 +4,21 @@
 #include "polymodel.h"
 
 // Mascota low poly sentada a su escritorio, mirando al frente, con el teclado
-// delante. Todas comparten cuerpo y animaciones; cambian las orejas, la cola y
+// delante. Todas comparten cuerpo y animaciones; cambian la cabeza, la cola y
 // los colores. Teclea cuando tú trabajas.
 class Critter : public Pet {
  public:
+  // Qué se construye sobre el cuerpo: un bicho (gato, conejo) o una chica.
+  enum Kind : uint8_t { Beast, Human };
+
   struct Species {
+    Kind kind;
     bool longEars;  // orejas largas (conejo) o de punta (gato)
     bool longTail;  // cola larga o pompón
     float scale;    // para que quepan las orejas largas
+    // Pelo, interior de las orejas, camiseta, raya, pantalón y zapatos.
     uint8_t fur[3], inner[3], shirt[3], stripe[3], shorts[3], shoe[3];
+    uint8_t hair[3], accent[3];  // melena y cinta (solo para Human)
   };
 
   explicit Critter(const Species& species);
@@ -21,15 +27,25 @@ class Critter : public Pet {
   void draw(Gfx& g) override;
   void onTap(int x, int y) override;
   Mood mood() const override { return mood_; }
+  void modelStats(int& verts, int& tris, int& parts, int& maxV, int& maxT, int& maxP) const override {
+    verts = model_.vertCount();
+    tris = model_.triCount();
+    parts = model_.partCount();
+    maxV = PolyModel::maxVerts();
+    maxT = PolyModel::maxTris();
+    maxP = PolyModel::maxParts();
+  }
 
  private:
   static const int FLASH_COUNT = 2;
 
   void buildDesk(int parent);
   void buildBody(int parent);
+  void buildHair();
   void buildFace();
   void showFace();
   void updateKeys(float dt);
+  bool human() const { return species_.kind == Human; }
 
   const Species species_;
   PolyModel model_;
@@ -40,7 +56,8 @@ class Critter : public Pet {
 
   // Piezas del modelo
   int body_, head_, armL_, armR_, shinL_, shinR_, tail_;
-  int deskMug_, handMug_, cigarette_;
+  int hair_, bangs_, strand_, ribbon_;
+  int deskMug_, handMug_, handProp_;
   int keyFlash_[FLASH_COUNT];
   int eyesOpen_, eyesBlink_, eyesClosed_, eyesHappy_, eyesFocus_, eyesStress_;
   int mouthSmall_, mouthOpen_, mouthRound_, mouthFlat_, mouthWavy_;

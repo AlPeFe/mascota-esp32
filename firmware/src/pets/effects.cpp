@@ -28,6 +28,10 @@ void Effects::update(float dt) {
         p.size += 3 * dt;
         p.vx += 12 * sinf(p.age * 5 + p.x) * dt;  // sube ondulando
         break;
+      case FxType::Data:
+        p.size += 1.5f * dt;
+        p.vx += 18 * sinf(p.age * 7 + p.x) * dt;  // asciende en zigzag
+        break;
     }
     p.x += p.vx * dt;
     p.y += p.vy * dt;
@@ -54,6 +58,7 @@ void Effects::draw(Gfx& g) {
   static const uint16_t sweat = rgb(90, 170, 240);
   static const uint16_t steam = rgb(205, 208, 218);
   static const uint16_t smoke = rgb(140, 145, 160);
+  static const uint16_t data = rgb(120, 240, 225);
 
   for (const Particle& p : p_) {
     if (!p.alive || p.y < SCENE_TOP) continue;
@@ -67,6 +72,7 @@ void Effects::draw(Gfx& g) {
         break;
       case FxType::Steam: drawPuff(g, x, y, s, steam); break;
       case FxType::Smoke: drawPuff(g, x, y, max(s, 1), smoke); break;
+      case FxType::Data: drawPuff(g, x, y, max(s, 1), data); break;
     }
   }
 }
