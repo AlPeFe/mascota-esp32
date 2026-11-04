@@ -79,4 +79,26 @@ class Gfx {
     s.setTextSize(size);
     s.drawString(str, x, y - top, 1);
   }
+
+  // Pega una capa de pixel art guardada en flash (RGB565). Si clave es true,
+  // el color 0xF81F se deja transparente. Escribe directo en el búfer de la
+  // franja, como el motor 3D, y recorta contra los bordes.
+  void blit(int x0, int y0, int w, int h, const uint16_t* src, bool clave) {
+    if (y0 + h <= top || y0 >= top + height) return;
+    uint16_t* buf = (uint16_t*)s.getPointer();
+    const int sw = s.width();
+    for (int j = 0; j < h; j++) {
+      const int y = y0 + j;
+      if (y < top || y >= top + height) continue;
+      const uint16_t* fila = src + (long)j * w;
+      uint16_t* dst = buf + (y - top) * sw;
+      for (int i = 0; i < w; i++) {
+        const int x = x0 + i;
+        if (x < 0 || x >= sw) continue;
+        const uint16_t c = pgm_read_word(fila + i);
+        if (clave && c == 0xF81F) continue;
+        dst[x] = (uint16_t)((c >> 8) | (c << 8));  // el sprite guarda los bytes al revés
+      }
+    }
+  }
 };

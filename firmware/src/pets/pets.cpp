@@ -1,8 +1,9 @@
 #include "critter.h"
+#include "lain.h"
 #include "pet.h"
 
 // Colores: pelo, interior de las orejas, camiseta, raya, pantalón y zapatos.
-// Las dos últimas parejas son la melena y la cinta, que solo usa la chica.
+// Las dos últimas parejas son la melena y la cinta (las usa la especie humana).
 static const Critter::Species CAT = {
     Critter::Beast, false, true, 1.0f,
     {205, 212, 232}, {248, 196, 205}, {60, 118, 205}, {120, 205, 225}, {70, 78, 110}, {52, 58, 96},
@@ -13,16 +14,10 @@ static const Critter::Species BUNNY = {
     {245, 205, 218}, {252, 170, 185}, {90, 185, 150}, {245, 235, 170}, {80, 110, 130}, {90, 66, 90},
     {0, 0, 0}, {0, 0, 0},
 };
-// Lain: piel, (sin orejas), uniforme, cuello blanco, falda, zapatos, melena y cinta.
-static const Critter::Species LAIN = {
-    Critter::Human, false, false, 1.0f,
-    {246, 216, 200}, {232, 190, 186}, {56, 72, 122}, {236, 238, 245}, {42, 54, 98}, {40, 38, 48},
-    {74, 56, 58}, {196, 46, 58},
-};
 
 static Pet* createCat() { return new Critter(CAT); }
 static Pet* createBunny() { return new Critter(BUNNY); }
-static Pet* createLain() { return new Critter(LAIN); }
+static Pet* createLain() { return new LainPet(); }
 
 // Lista de mascotas disponibles. La primera es la que sale por defecto.
 const PetInfo PETS[] = {

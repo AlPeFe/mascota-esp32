@@ -8,7 +8,7 @@
 
 Vive en una pantalla táctil ESP32 de 2,8" conectada por USB y te enseña de un vistazo cómo va tu PC.
 
-> **Ahora es Lain.** La mascota por defecto es Lain Iwakura, la chica de *Serial Experiments Lain*: melena corta con el mechón que le cae sobre la cara, uniforme con cinta al cuello y un cacharro conectado que consulta entre tecla y tecla. El gato y el conejo siguen ahí, en *Ajustes → Mascota*.
+> **Ahora es Lain.** La mascota por defecto es Lain Iwakura, la chica de *Serial Experiments Lain*, en pixel art: melena corta con flequillo, ojos grandes, uniforme de marinera con cinta roja y las manos en el teclado. El gato y el conejo siguen ahí, en *Ajustes → Mascota*, con su motor 3D de siempre.
 
 ## Lain
 
@@ -233,6 +233,8 @@ Con `Human` la cabeza cambia: melena, flequillo y mechón largo sobre la cara en
 **Calibrar el táctil.** Si el toque no coincide con el dedo, ajusta `TOUCH_X_MIN/MAX` y `TOUCH_Y_MIN/MAX` en [`config.h`](firmware/src/config.h).
 
 **Capturas de pantalla.** [`herramientas/captura.py`](herramientas/captura.py) guarda en PNG lo que dibuja la placa, sin hacerle fotos. Así se hicieron las imágenes de esta página.
+
+**El arte de Lain.** No es 3D: es una imagen de pixel art con las expresiones encima. El original está en [`herramientas/arte/`](herramientas/arte/) y [`arte_lain2.py`](herramientas/arte/arte_lain2.py) lo recorta, lo baja a 207×185 píxeles (18 colores), pinta las cinco caras y escribe `firmware/src/pets/lain_art2.h` con los arrays RGB565 para la flash. Para cambiar el dibujo: se sustituye `diseno-original.png` y se vuelve a ejecutar el script.
 
 <details>
 <summary><b>Protocolo USB</b></summary>
